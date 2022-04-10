@@ -1,0 +1,32 @@
+## queries used for tableau
+
+## 1
+Select SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, SUM(new_deaths)/SUM(new_cases)*100 as death_percentage
+from `portfolio-project-341707.covid_data.covid_deaths` 
+where continent is not null 
+order by 1,2
+
+
+## 2
+Select location, SUM(new_deaths) as total_death_count
+From `portfolio-project-341707.covid_data.covid_deaths`
+Where continent is null 
+and location not in ('World', 'European Union', 'International', 'Upper middle income', 'High income', 'Lower middle income', 'Low income')
+Group by location
+order by total_death_count desc
+
+
+## 3
+Select Location, Population, MAX(total_cases) as highest_infection_count,  Max((total_cases/population))*100 as infected_population
+From `portfolio-project-341707.covid_data.covid_deaths`
+where continent is not null
+Group by Location, Population
+order by infected_population desc
+
+
+## 4
+Select Location, Population, date, MAX(total_cases) as highest_infection_count,  Max((total_cases/population))*100 as infected_population
+From `portfolio-project-341707.covid_data.covid_deaths`
+where continent is not null
+Group by Location, Population, date
+order by infected_population desc
