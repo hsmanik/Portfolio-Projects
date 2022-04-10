@@ -1,0 +1,98 @@
+select *
+from `portfolio-project-341707.covid_data.covid_deaths`
+order by location, date
+
+/* select *
+    from `portfolio-project-341707.covid_data.covid_vaccinations`
+    order by location, date
+*/
+
+--select data that we will be using
+
+select location, date, total_cases, new_cases, total_deaths, population 
+from `portfolio-project-341707.covid_data.covid_deaths`
+order by location, date
+
+-- looking at total cases vs total deaths
+
+select location, date, total_cases, total_deaths, (total_deaths/ total_cases)*100 as death_percentage
+from `portfolio-project-341707.covid_data.covid_deaths`
+where location = "India"
+order by location, date
+
+--looking at the total cases vs population as infection percentage
+
+select location, date, total_cases, population, (total_cases/ population)*100 as infection_percentage
+from `portfolio-project-341707.covid_data.covid_deaths`
+where location = "India"
+order by location, date
+
+-- looking at countries with highest infection rate compared to population
+
+select location, population, max(total_cases) as highest_infection_count, max((total_cases/ population))*100 as infection_percentage
+from `portfolio-project-341707.covid_data.covid_deaths`
+group by location ,population 
+order by infection_percentage desc 
+
+-- showing countries with highest death count per population
+
+select location, max(total_deaths) as highest_death_count
+from `portfolio-project-341707.covid_data.covid_deaths`
+where continent is not null
+group by location  
+order by highest_death_count desc 
+
+-- Breaking things down by continent
+-- showing continents with highest death counts 
+
+select location, max(total_deaths) as highest_death_count 
+from `portfolio-project-341707.covid_data.covid_deaths`
+where continent is null
+group by location
+order by highest_death_count desc
+
+
+--global numbers
+
+select  sum(new_cases) as global_cases, sum(new_deaths) as global_deaths, (sum(new_deaths)/sum(new_cases))*100 global_death_percentage 
+from `portfolio-project-341707.covid_data.covid_deaths`
+where continent is not null
+--group by date
+order by 1, 2
+
+-- joining another table covid vaccinations 
+-- looking at total population vs vaccinations
+
+select cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations
+from `portfolio-project-341707.covid_data.covid_deaths` as cd
+join `portfolio-project-341707.covid_data.covid_vaccinations` as cv
+    on cd.location = cv.location and 
+        cd.date = cv.date 
+        where cd.continent is not null
+order by 1,2,3
+
+--in this the vaccination count is added whenever the new vaccinations are done 
+
+select cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations, sum(cv.new_vaccinations)
+over (partition by cd.location order by cd.location, cd.date) as rolling_people_vaccinated
+from `portfolio-project-341707.covid_data.covid_deaths` as cd
+join `portfolio-project-341707.covid_data.covid_vaccinations` as cv
+    on cd.location = cv.location and 
+        cd.date = cv.date 
+        where cd.continent is not null
+order by 2,3
+
+-- now for vaccinated per population 
+-- temp table
+with popvsvac as (
+select cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations, sum(cv.new_vaccinations)
+over (partition by cd.location order by cd.location, cd.date) as rolling_people_vaccinated, (sum(cv.new_vaccinations)/cd.population)*100 
+from `portfolio-project-341707.covid_data.covid_deaths` as cd
+join `portfolio-project-341707.covid_data.covid_vaccinations` as cv
+    on cd.location = cv.location and 
+        cd.date = cv.date 
+        where cd.continent is not null
+order by 1,2,3
+)
+select *, (rolling_people_vaccinated/population)* 100
+from popvsvac
