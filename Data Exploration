@@ -1,3 +1,5 @@
+Dataset for this project- https://ourworldindata.org/covid-deaths
+
 select *
 from `portfolio-project-341707.covid_data.covid_deaths`
 order by location, date
